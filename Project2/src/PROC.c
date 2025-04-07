@@ -275,8 +275,19 @@ void executeR(RType r)
 		break;
 
 	case 0x09: // jalr
-		res = ProgramCounter + 4;
+		if (r.rd == 0)
+			RegFile[31] = ProgramCounter + 4;
+		else
+			res = ProgramCounter + 4;
 		ProgramCounter = RegFile[r.rs];
+		break;
+
+	case 0x0C: // syscall
+
+		break;
+
+	case 0x0D: // breakpoint
+
 		break;
 
 	default:
@@ -294,63 +305,140 @@ void executeR(RType r)
 
 void executeI(IType i)
 {
+	uint32_t res = 0;
+	bool writeRegister = true;
+
 	switch (i.opcode)
 	{
-	case 0x08: // addi
-		break;
-
-	case 0x09: // addiu
-		break;
-
-	case 0x0C: // andi
-		break;
-
-	case 0x0D: // ori
-		break;
-
-	case 0x0E: // xori
-		break;
-
-	case 0x0A: // slti
-		break;
-
-	case 0x0B: // sltiu
-		break;
-
-	case 0x04: // beq
-		break;
-
-	case 0x05: // bne
-		break;
-
 	case 0x20: // lb
-		break;
-
-	case 0x24: // lbu
+		res = readByte(RegFile[i.rs] + (int16_t)i.immediate, false);
 		break;
 
 	case 0x21: // lh
 		break;
 
-	case 0x25: // lhu
-		break;
-
-	case 0x0F: // lui
+	case 0x22: // lwl
 		break;
 
 	case 0x23: // lw
+		res = readWord(RegFile[i.rs] + (int16_t)i.immediate, false);
+		break;
+
+	case 0x24: // lbu
+		res = (uint8_t)readByte(RegFile[i.rs] + (int16_t)i.immediate, false);
+		break;
+
+	case 0x25: // lhu
+		break;
+
+	case 0x26: // lwr
 		break;
 
 	case 0x28: // sb
+		writeByte(RegFile[i.rs] + (int16_t)i.immediate, RegFile[i.rt], false);
 		break;
 
 	case 0x29: // sh
 		break;
 
+	case 0x2A: // swl
+		break;
+
 	case 0x2B: // sw
+		writeWord(RegFile[i.rs] + (int16_t)i.immediate, RegFile[i.rt], false);
+		break;
+
+	case 0x2E: // swr
+		break;
+
+	case 0x08: // addi
+		res = RegFile[i.rs] + (int16_t)i.immediate;
+		break;
+
+	case 0x09: // addiu
+		res = RegFile[i.rs] + (int16_t)i.immediate;
+		break;
+
+	case 0x0A: // slti
+		res = (RegFile[i.rs] < (int16_t)i.immediate) ? 1 : 0;
+		break;
+
+	case 0x0B: // sltiu
+		res = ((uint32_t)RegFile[i.rs] < (uint32_t)(int16_t)i.immediate) ? 1 : 0;
+		break;
+
+	case 0x0C: // andi
+		res = RegFile[i.rs] & (int16_t)i.immediate;
+		break;
+
+	case 0x0D: // ori
+		res = RegFile[i.rs] | (int16_t)i.immediate;
+		break;
+
+	case 0x0E: // xori
+		res = RegFile[i.rs] ^ (int16_t)i.immediate;
+		break;
+
+	case 0x0F: // lui
+		res = ((uint32_t)(i.immediate & 0xFFFF)) << 0x10;
+		break;
+
+	case 0x01:
+		if (i.rt == 0) // bltz
+		{
+			if (RegFile[i.rs] < 0)
+				ProgramCounter += ((int16_t)i.immediate << 2);
+		}
+		else if (i.rt == 1) // bgez
+		{
+			if (RegFile[i.rs] >= 0)
+				ProgramCounter += ((int16_t)i.immediate << 2);
+		}
+		else if (i.rt == 16) // bltzal
+		{
+			if (RegFile[i.rs] < 0)
+			{
+				RegFile[31] = ProgramCounter + 4;
+				ProgramCounter += ((int16_t)i.immediate << 2);
+			}
+		}
+		else if (i.rt == 17) // bgezal
+		{
+			if (RegFile[i.rs] >= 0)
+			{
+				RegFile[31] = ProgramCounter + 4;
+				ProgramCounter += ((int16_t)i.immediate << 2);
+			}
+		}
+		break;
+
+	case 0x04: // beq
+		if (RegFile[i.rs] == RegFile[i.rt])
+			ProgramCounter += ((int16_t)i.immediate << 2);
+		break;
+
+	case 0x05: // bne
+		if (RegFile[i.rs] != RegFile[i.rt])
+			ProgramCounter += ((int16_t)i.immediate << 2);
+		break;
+
+	case 0x06: // blez
+		if (RegFile[i.rs] <= 0)
+			ProgramCounter += ((int16_t)i.immediate << 2);
+		break;
+
+	case 0x07: // bgtz
+		if (RegFile[i.rs] > 0)
+			ProgramCounter += ((int16_t)i.immediate << 2);
 		break;
 
 	default:
+		writeRegister = false;
 		break;
+	}
+
+	if (writeRegister && i.rt != 0)
+	{
+		RegFile[i.rt] = res;
 	}
 }
