@@ -9,6 +9,7 @@
 #include "utils/heap.h"
 
 uint32_t ProgramCounter;
+bool jumpStatus;
 
 typedef struct RType
 {
@@ -104,6 +105,7 @@ int main(int argc, char *argv[])
 	int i;
 	for (i = 0; i < MaxInstructions; i++)
 	{
+		jumpStatus = false;
 		CurrentInstruction = readWord(
 			ProgramCounter, false); // Fetch instruction at 'ProgramCounter'
 
@@ -116,9 +118,12 @@ int main(int argc, char *argv[])
 			executeR(decodeR(CurrentInstruction));
 		}
 		else if (initOpcode == 0x02 || initOpcode == 0x03)
-			decodeJ(CurrentInstruction);
+			executeJ(decodeJ(CurrentInstruction));
 		else
-			decodeI(CurrentInstruction);
+			executeI(decodeI(CurrentInstruction));
+
+		if (!jumpStatus)
+			ProgramCounter += 4;
 	}
 
 	printRegFile(); // Print the final contents of the register file
@@ -154,9 +159,15 @@ IType decodeI(uint32_t inst)
 	return iInstruction;
 }
 
-uint32_t decodeJ(uint32_t inst) {}
+JType decodeJ(uint32_t inst)
+{
+	JType jInstruction = {
+		(inst >> 26) & 0x3F, // opcode
+		inst & 0x3FFFFFF	 // address
+	};
 
-uint32_t decodeSpecial(uint32_t inst) {}
+	return jInstruction;
+}
 
 void executeR(RType r)
 {
@@ -266,7 +277,7 @@ void executeR(RType r)
 		break;
 
 	case 0x1B: // divu
-		uProduct = (uint64_t)RegFile[r.rs] * (uint64_t)RegFile[r.rt];
+		uProduct = (uint64_t)RegFile[r.rs] / (uint64_t)RegFile[r.rt];
 		RegFile[33] = (uint32_t)(uProduct & 0xFFFFFFFF);		 // LO
 		RegFile[32] = (uint32_t)((uProduct >> 32) & 0xFFFFFFFF); // HI
 		break;
@@ -281,10 +292,11 @@ void executeR(RType r)
 		else
 			res = ProgramCounter + 4;
 		ProgramCounter = RegFile[r.rs];
+		jumpStatus = true;
 		break;
 
 	case 0x0C: // syscall
-
+		SyscallExe(RegFile[2]);
 		break;
 
 	case 0x0D: // breakpoint
@@ -483,5 +495,25 @@ void executeI(IType i)
 	if (writeRegister && i.rt != 0)
 	{
 		RegFile[i.rt] = res;
+	}
+}
+
+void executeJ(JType j)
+{
+	switch (j.opcode)
+	{
+	case 0x02: // j
+		ProgramCounter = j.address;
+		jumpStatus = true;
+		break;
+
+	case 0x03: // jal
+		RegFile[31] = ProgramCounter + 4;
+		ProgramCounter = j.address;
+		jumpStatus = true;
+		break;
+
+	default:
+		break;
 	}
 }
