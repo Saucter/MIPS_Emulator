@@ -1,6 +1,7 @@
 #include <stdint.h> /* uint32_t */
 #include <stdio.h>	/* fprintf(), printf() */
 #include <stdlib.h> /* atoi() */
+#include <math.h>
 
 #include "RegFile.h"
 #include "Syscall.h"
@@ -315,9 +316,30 @@ void executeI(IType i)
 		break;
 
 	case 0x21: // lh
+		uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+		uint8_t high = readByte(addr, false);
+		uint8_t low = readByte(addr + 1, false);
+		uint16_t combined = (high << 8) | low;
+		res = (int16_t)combined;
 		break;
 
 	case 0x22: // lwl
+		if (i.rt != 0)
+		{
+			uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+			uint32_t byteOffset = addr % 4;
+			uint32_t alignedAddr = addr - byteOffset;
+
+			uint32_t combined = 0;
+			for (int i = 0; i <= byteOffset; i++)
+			{
+				combined = (combined << 8) | readByte(alignedAddr + i, false);
+			}
+
+			uint32_t shift = (3 - byteOffset) * 8;
+			uint32_t mask = (byteOffset == 3) ? 0 : (0xFFFFFFFF >> ((byteOffset + 1) * 8));
+			res = (RegFile[i.rt] & mask) | (combined << shift);
+		}
 		break;
 
 	case 0x23: // lw
@@ -329,6 +351,11 @@ void executeI(IType i)
 		break;
 
 	case 0x25: // lhu
+		uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+		uint8_t high = readByte(addr, false);
+		uint8_t low = readByte(addr + 1, false);
+		uint16_t combined = (high << 8) | low;
+		res = (uint16_t)combined;
 		break;
 
 	case 0x26: // lwr
