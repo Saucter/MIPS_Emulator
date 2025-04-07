@@ -84,7 +84,7 @@ int main(int argc, char * argv[]) {
 
 		//FETCH THE INSTRUCTION AT 'ProgramCounter'		
 		CurrentInstruction = readWord(ProgramCounter,false);
-
+		
 		//Print contents of the register file after each instruction
 		
 		printRegFile();//only suggested for Debug, comment this line to reduce output
@@ -92,6 +92,7 @@ int main(int argc, char * argv[]) {
 		/********************************/
 		/* ADD YOUR IMPLEMENTATION HERE */
 		/********************************/
+		
 
 
 	}   
