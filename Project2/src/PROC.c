@@ -300,7 +300,8 @@ void executeR(RType r)
 		break;
 
 	case 0x0D: // breakpoint
-
+		printf("Breakpoint found at PC: 0x%08X\n", ProgramCounter);
+		exit(0);
 		break;
 
 	default:
