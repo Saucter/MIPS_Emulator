@@ -359,6 +359,22 @@ void executeI(IType i)
 		break;
 
 	case 0x26: // lwr
+		if (i.rt != 0)
+		{
+			uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+			uint32_t byteOffset = addr % 4;
+			uint32_t alignedAddr = addr - byteOffset;
+
+			uint32_t combined = 0;
+			for (int i = 0; i <= byteOffset; i++)
+			{
+				combined = (combined << 8) | readByte(alignedAddr + i, false);
+			}
+
+			uint32_t shift = (byteOffset) * 8;
+			uint32_t mask = (pow(2, 33) - 1) - (pow(2, (byteOffset + 1) * 8) - 1);
+			res = (RegFile[i.rt] & mask) | combined;
+		}
 		break;
 
 	case 0x28: // sb
