@@ -320,6 +320,7 @@ void executeR(RType r)
 void executeI(IType i)
 {
 	uint32_t res = 0;
+	uint32_t addr = 0;
 	bool writeRegister = true;
 
 	switch (i.opcode)
@@ -329,7 +330,7 @@ void executeI(IType i)
 		break;
 
 	case 0x21: // lh
-		uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+		addr = RegFile[i.rs] + (int16_t)i.immediate;
 		uint8_t high = readByte(addr, false);
 		uint8_t low = readByte(addr + 1, false);
 		uint16_t combined = (high << 8) | low;
@@ -339,7 +340,7 @@ void executeI(IType i)
 	case 0x22: // lwl
 		if (i.rt != 0)
 		{
-			uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+			addr = RegFile[i.rs] + (int16_t)i.immediate;
 			uint32_t byteOffset = addr % 4;
 			uint32_t alignedAddr = addr - byteOffset;
 
@@ -364,7 +365,7 @@ void executeI(IType i)
 		break;
 
 	case 0x25: // lhu
-		uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+		addr = RegFile[i.rs] + (int16_t)i.immediate;
 		uint8_t high = readByte(addr, false);
 		uint8_t low = readByte(addr + 1, false);
 		uint16_t combined = (high << 8) | low;
@@ -374,7 +375,7 @@ void executeI(IType i)
 	case 0x26: // lwr
 		if (i.rt != 0)
 		{
-			uint32_t addr = RegFile[i.rs] + (int16_t)i.immediate;
+			addr = RegFile[i.rs] + (int16_t)i.immediate;
 			uint32_t byteOffset = addr % 4;
 			uint32_t alignedAddr = addr - byteOffset;
 
@@ -395,6 +396,11 @@ void executeI(IType i)
 		break;
 
 	case 0x29: // sh
+		addr = RegFile[i.rs] + (int16_t)i.immediate;
+		uint8_t high = (uint8_t)(RegFile[i.rt] >> 8) & 0xFF;
+		uint8_t low = (uint8_t)(RegFile[i.rt] & 0xFF);
+		writeByte(addr, high, false);
+		writeByte(addr + 1, low, false);
 		break;
 
 	case 0x2A: // swl
