@@ -5,7 +5,7 @@ COMPILER = gcc
 SIMPATH = src/
 
 # WHAT FILES ARE NEEDED FOR COMPILATION?
-FILELIST = $(SIMPATH)elf_reader/elf_reader.c $(SIMPATH)utils/heap.c $(SIMPATH)RegFile.c $(SIMPATH)Syscall.c $(SIMPATH)PROC.c 
+FILELIST = $(SIMPATH)elf_reader/elf_reader.c $(SIMPATH)utils/heap.c $(SIMPATH)RegFile.c $(SIMPATH)Syscall.c $(SIMPATH)PROC.c -lm
 
 # RUN ON 'make'
 MEMU: 

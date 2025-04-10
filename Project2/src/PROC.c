@@ -35,6 +35,14 @@ typedef struct JType
 	uint32_t address;
 } JType;
 
+RType decodeR(uint32_t inst);
+IType decodeI(uint32_t inst);
+JType decodeJ(uint32_t inst);
+
+void executeR(RType r);
+void executeI(IType i);
+void executeJ(JType j);
+
 int main(int argc, char *argv[])
 {
 
@@ -322,6 +330,10 @@ void executeI(IType i)
 	uint32_t res = 0;
 	uint32_t addr = 0;
 	bool writeRegister = true;
+	uint8_t high;
+	uint8_t low;
+	uint16_t combinedHalf;
+	uint32_t combinedWord;
 
 	switch (i.opcode)
 	{
@@ -331,10 +343,10 @@ void executeI(IType i)
 
 	case 0x21: // lh
 		addr = RegFile[i.rs] + (int16_t)i.immediate;
-		uint8_t high = readByte(addr, false);
-		uint8_t low = readByte(addr + 1, false);
-		uint16_t combined = (high << 8) | low;
-		res = (int16_t)combined;
+		high = readByte(addr, false);
+		low = readByte(addr + 1, false);
+		combinedHalf = (high << 8) | low;
+		res = (int16_t)combinedHalf;
 		break;
 
 	case 0x22: // lwl
@@ -344,15 +356,15 @@ void executeI(IType i)
 			uint32_t byteOffset = addr % 4;
 			uint32_t alignedAddr = addr - byteOffset;
 
-			uint32_t combined = 0;
+			combinedWord = 0;
 			for (int i = 0; i <= byteOffset; i++)
 			{
-				combined = (combined << 8) | readByte(alignedAddr + i, false);
+				combinedWord = (combinedWord << 8) | readByte(alignedAddr + i, false);
 			}
 
 			uint32_t shift = (3 - byteOffset) * 8;
 			uint32_t mask = (byteOffset == 3) ? 0 : (0xFFFFFFFF >> ((byteOffset + 1) * 8));
-			res = (RegFile[i.rt] & mask) | (combined << shift);
+			res = (RegFile[i.rt] & mask) | (combinedWord << shift);
 		}
 		break;
 
@@ -366,10 +378,10 @@ void executeI(IType i)
 
 	case 0x25: // lhu
 		addr = RegFile[i.rs] + (int16_t)i.immediate;
-		uint8_t high = readByte(addr, false);
-		uint8_t low = readByte(addr + 1, false);
-		uint16_t combined = (high << 8) | low;
-		res = (uint16_t)combined;
+		high = readByte(addr, false);
+		low = readByte(addr + 1, false);
+		combinedHalf = (high << 8) | low;
+		res = (uint16_t)combinedHalf;
 		break;
 
 	case 0x26: // lwr
@@ -379,15 +391,15 @@ void executeI(IType i)
 			uint32_t byteOffset = addr % 4;
 			uint32_t alignedAddr = addr - byteOffset;
 
-			uint32_t combined = 0;
+			combinedWord = 0;
 			for (int i = 0; i <= byteOffset; i++)
 			{
-				combined = (combined << 8) | readByte(alignedAddr + i, false);
+				combinedWord = (combinedWord << 8) | readByte(alignedAddr + i, false);
 			}
 
 			uint32_t shift = (byteOffset) * 8;
 			uint32_t mask = (pow(2, 33) - 1) - (pow(2, (byteOffset + 1) * 8) - 1);
-			res = (RegFile[i.rt] & mask) | combined;
+			res = (RegFile[i.rt] & mask) | combinedWord;
 		}
 		break;
 
@@ -397,8 +409,8 @@ void executeI(IType i)
 
 	case 0x29: // sh
 		addr = RegFile[i.rs] + (int16_t)i.immediate;
-		uint8_t high = (uint8_t)(RegFile[i.rt] >> 8) & 0xFF;
-		uint8_t low = (uint8_t)(RegFile[i.rt] & 0xFF);
+		high = (uint8_t)(RegFile[i.rt] >> 8) & 0xFF;
+		low = (uint8_t)(RegFile[i.rt] & 0xFF);
 		writeByte(addr, high, false);
 		writeByte(addr + 1, low, false);
 		break;
