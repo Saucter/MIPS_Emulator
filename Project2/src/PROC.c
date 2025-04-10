@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
 		printRegFile();
 
 		uint32_t initOpcode = (CurrentInstruction >> 26) & 0x3F;
-
 		if (initOpcode == 0x00)
 		{
 			executeR(decodeR(CurrentInstruction));
@@ -130,10 +129,11 @@ int main(int argc, char *argv[])
 		else
 			executeI(decodeI(CurrentInstruction));
 
-		if (!jumpStatus)
+		if (jumpStatus == false)
 			ProgramCounter += 4;
-	}
 
+		printf("\n\n%d0\n\n", ProgramCounter);
+	}
 	printRegFile(); // Print the final contents of the register file
 	closeFDT();		// Close file pointers & free allocated Memory
 	CleanUp();
@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
 
 RType decodeR(uint32_t inst)
 {
+	printf("oidrfffffffffdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	RType rInstruction = {
 		(inst >> 26) & 0x3F, // opcode
 		(inst >> 21) & 0x1F, // rs
@@ -157,6 +158,7 @@ RType decodeR(uint32_t inst)
 
 IType decodeI(uint32_t inst)
 {
+	printf("brooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
 	IType iInstruction = {
 		(inst >> 26) & 0x3F, // opcode
 		(inst >> 21) & 0x1F, // rs
@@ -334,6 +336,9 @@ void executeI(IType i)
 	uint8_t low;
 	uint16_t combinedHalf;
 	uint32_t combinedWord;
+	uint16_t offset;
+	uint32_t byteOffset;
+	uint32_t mask;
 
 	switch (i.opcode)
 	{
@@ -352,9 +357,9 @@ void executeI(IType i)
 	case 0x22: // lwl
 		if (i.rt != 0)
 		{
-			uint16_t offset = (int16_t)i.immediate;
+			offset = (int16_t)i.immediate;
 			addr = RegFile[i.rs] + offset;
-			uint32_t byteOffset = 4 - offset % 4;
+			byteOffset = 4 - offset % 4;
 
 			combinedWord = 0;
 			for (int i = addr; i < addr + byteOffset; i++)
@@ -363,7 +368,7 @@ void executeI(IType i)
 			}
 
 			uint32_t shift = (offset % 4) * 8;
-			uint32_t mask = (byteOffset == 4) ? 0 : (0xFFFFFFFF >> (byteOffset + 1 * 8));
+			mask = (byteOffset == 4) ? 0 : (0xFFFFFFFF >> (byteOffset + 1 * 8));
 			res = (RegFile[i.rt] & mask) | (combinedWord << shift);
 		}
 		break;
@@ -388,9 +393,9 @@ void executeI(IType i)
 		if (i.rt != 0)
 		{
 
-			uint16_t offset = (int16_t)i.immediate;
+			offset = (int16_t)i.immediate;
 			addr = RegFile[i.rs] + offset;
-			uint32_t byteOffset = offset % 4;
+			byteOffset = offset % 4;
 
 			combinedWord = 0;
 			for (int i = addr - byteOffset; i <= addr; i++)
@@ -398,7 +403,7 @@ void executeI(IType i)
 				combinedWord = (combinedWord << 8) | readByte(addr + i, false);
 			}
 
-			uint32_t mask = (pow(2, 33) - 1) - (pow(2, (byteOffset + 1) * 8) - 1);
+			mask = (pow(2, 33) - 1) - (pow(2, (byteOffset + 1) * 8) - 1);
 			res = (RegFile[i.rt] & mask) | combinedWord;
 		}
 		break;
@@ -409,8 +414,8 @@ void executeI(IType i)
 
 	case 0x29: // sh
 		addr = RegFile[i.rs] + (int16_t)i.immediate;
-		high = (uint8_t)(RegFile[i.rt] >> 8) & 0xFF;
-		low = (uint8_t)(RegFile[i.rt] & 0xFF);
+		high = (uint8_t)(RegFile[i.rt] >> 24) & 0xFF;
+		low = (uint8_t)(RegFile[i.rt] >> 16) & 0xFF;
 		writeByte(addr, high, false);
 		writeByte(addr + 1, low, false);
 		break;
