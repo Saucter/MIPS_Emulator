@@ -352,18 +352,18 @@ void executeI(IType i)
 	case 0x22: // lwl
 		if (i.rt != 0)
 		{
-			addr = RegFile[i.rs] + (int16_t)i.immediate;
-			uint32_t byteOffset = addr % 4;
-			uint32_t alignedAddr = addr - byteOffset;
+			uint16_t offset = (int16_t)i.immediate;
+			addr = RegFile[i.rs] + offset;
+			uint32_t byteOffset = 4 - offset % 4;
 
 			combinedWord = 0;
-			for (int i = 0; i <= byteOffset; i++)
+			for (int i = addr; i < addr + byteOffset; i++)
 			{
-				combinedWord = (combinedWord << 8) | readByte(alignedAddr + i, false);
+				combinedWord = (combinedWord << 8) | readByte(addr + i, false);
 			}
 
-			uint32_t shift = (3 - byteOffset) * 8;
-			uint32_t mask = (byteOffset == 3) ? 0 : (0xFFFFFFFF >> ((byteOffset + 1) * 8));
+			uint32_t shift = (offset % 4) * 8;
+			uint32_t mask = (byteOffset == 4) ? 0 : (0xFFFFFFFF >> (byteOffset + 1 * 8));
 			res = (RegFile[i.rt] & mask) | (combinedWord << shift);
 		}
 		break;
@@ -387,17 +387,17 @@ void executeI(IType i)
 	case 0x26: // lwr
 		if (i.rt != 0)
 		{
-			addr = RegFile[i.rs] + (int16_t)i.immediate;
-			uint32_t byteOffset = addr % 4;
-			uint32_t alignedAddr = addr - byteOffset;
+
+			uint16_t offset = (int16_t)i.immediate;
+			addr = RegFile[i.rs] + offset;
+			uint32_t byteOffset = offset % 4;
 
 			combinedWord = 0;
-			for (int i = 0; i <= byteOffset; i++)
+			for (int i = addr - byteOffset; i <= addr; i++)
 			{
-				combinedWord = (combinedWord << 8) | readByte(alignedAddr + i, false);
+				combinedWord = (combinedWord << 8) | readByte(addr + i, false);
 			}
 
-			uint32_t shift = (byteOffset) * 8;
 			uint32_t mask = (pow(2, 33) - 1) - (pow(2, (byteOffset + 1) * 8) - 1);
 			res = (RegFile[i.rt] & mask) | combinedWord;
 		}
