@@ -115,10 +115,13 @@ int main(int argc, char *argv[])
 	for (i = 0; i < MaxInstructions; i++)
 	{
 		jumpStatus = false;
-		CurrentInstruction = readWord(
-			ProgramCounter, false); // Fetch instruction at 'ProgramCounter'
-
+		CurrentInstruction = readWord(ProgramCounter, false); // Fetch instruction at 'ProgramCounter'
 		uint32_t initOpcode = (CurrentInstruction >> 26) & 0x3F;
+
+		printf("Program Counter: %d\n", ProgramCounter);
+		printf("Current Instruction: %x\n", CurrentInstruction);
+		printf("Initi Opcode: %x", initOpcode);
+
 		if (initOpcode == 0x00)
 		{
 			executeR(decodeR(CurrentInstruction));
@@ -133,8 +136,7 @@ int main(int argc, char *argv[])
 
 		printRegFile();
 	}
-	printRegFile(); // Print the final contents of the register file
-	closeFDT();		// Close file pointers & free allocated Memory
+	closeFDT(); // Close file pointers & free allocated Memory
 	CleanUp();
 
 	return 0;
@@ -178,6 +180,7 @@ JType decodeJ(uint32_t inst)
 
 void executeR(RType r)
 {
+	printf("\nFunction: %d", r.funct);
 	uint32_t res = 0;
 	bool writeRegister = true;
 	int64_t product = 0;
@@ -255,6 +258,7 @@ void executeR(RType r)
 
 	case 0x11: // mthi
 		RegFile[32] = RegFile[r.rs];
+		writeRegister = false;
 		break;
 
 	case 0x12: // mflo
@@ -263,30 +267,35 @@ void executeR(RType r)
 
 	case 0x13: // mtlo
 		RegFile[33] = RegFile[r.rs];
+		writeRegister = false;
 		break;
 
 	case 0x18: // mult
 		product = (int64_t)RegFile[r.rs] * (int64_t)RegFile[r.rt];
 		RegFile[33] = (int32_t)(product & 0xFFFFFFFF);		   // LO
 		RegFile[32] = (int32_t)((product >> 32) & 0xFFFFFFFF); // HI
+		writeRegister = false;
 		break;
 
 	case 0x19: // multu
 		uProduct = (uint64_t)RegFile[r.rs] * (uint64_t)RegFile[r.rt];
 		RegFile[33] = (uint32_t)(uProduct & 0xFFFFFFFF);		 // LO
 		RegFile[32] = (uint32_t)((uProduct >> 32) & 0xFFFFFFFF); // HI
+		writeRegister = false;
 		break;
 
 	case 0x1A: // div
 		product = (int64_t)RegFile[r.rs] / (int64_t)RegFile[r.rt];
 		RegFile[33] = (int32_t)(product & 0xFFFFFFFF);		   // LO
 		RegFile[32] = (int32_t)((product >> 32) & 0xFFFFFFFF); // HI
+		writeRegister = false;
 		break;
 
 	case 0x1B: // divu
 		uProduct = (uint64_t)RegFile[r.rs] / (uint64_t)RegFile[r.rt];
 		RegFile[33] = (uint32_t)(uProduct & 0xFFFFFFFF);		 // LO
 		RegFile[32] = (uint32_t)((uProduct >> 32) & 0xFFFFFFFF); // HI
+		writeRegister = false;
 		break;
 
 	case 0x08: // jr
@@ -422,6 +431,7 @@ void executeI(IType i)
 
 	case 0x2B: // sw
 		writeWord(RegFile[i.rs] + (int16_t)i.immediate, RegFile[i.rt], false);
+		writeRegister = false;
 		break;
 
 	case 0x2E: // swr
@@ -491,6 +501,7 @@ void executeI(IType i)
 	case 0x04: // beq
 		if (RegFile[i.rs] == RegFile[i.rt])
 			ProgramCounter += ((int16_t)i.immediate << 2);
+		writeRegister = false;
 		break;
 
 	case 0x05: // bne
