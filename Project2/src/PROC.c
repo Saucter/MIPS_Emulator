@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
 	printf("\n ----- Execute Program ----- \n");
 	printf("Max Instruction to run = %d \n", MaxInstructions);
 	fflush(stdout);
+	ProgramCounter = exec.GPC_START;
 
 	int i;
 	for (i = 0; i < MaxInstructions; i++)
@@ -116,8 +117,6 @@ int main(int argc, char *argv[])
 		jumpStatus = false;
 		CurrentInstruction = readWord(
 			ProgramCounter, false); // Fetch instruction at 'ProgramCounter'
-
-		printRegFile();
 
 		uint32_t initOpcode = (CurrentInstruction >> 26) & 0x3F;
 		if (initOpcode == 0x00)
@@ -132,7 +131,7 @@ int main(int argc, char *argv[])
 		if (jumpStatus == false)
 			ProgramCounter += 4;
 
-		printf("\n\n%d0\n\n", ProgramCounter);
+		printRegFile();
 	}
 	printRegFile(); // Print the final contents of the register file
 	closeFDT();		// Close file pointers & free allocated Memory
@@ -143,7 +142,6 @@ int main(int argc, char *argv[])
 
 RType decodeR(uint32_t inst)
 {
-	printf("oidrfffffffffdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 	RType rInstruction = {
 		(inst >> 26) & 0x3F, // opcode
 		(inst >> 21) & 0x1F, // rs
@@ -158,7 +156,6 @@ RType decodeR(uint32_t inst)
 
 IType decodeI(uint32_t inst)
 {
-	printf("brooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
 	IType iInstruction = {
 		(inst >> 26) & 0x3F, // opcode
 		(inst >> 21) & 0x1F, // rs
